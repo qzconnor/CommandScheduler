@@ -1,0 +1,4 @@
+name: CommandScheduler
+version: '${project.version}'
+main: de.xconnortv.commandscheduler.CommandScheduler
+api-version: '1.20'
