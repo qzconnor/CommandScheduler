@@ -1,11 +1,12 @@
-package de.xconnortv.shopsystem.commands.util;
+package de.xconnortv.commandscheduler.commands.util;
 
-import de.xconnortv.shopsystem.ShopSystem;
+import de.xconnortv.commandscheduler.CommandScheduler;
 import lombok.Getter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,10 +18,10 @@ import java.util.List;
 public class AbstractCommand implements TabExecutor {
 
 
-    private final ShopSystem instance;
+    private final CommandScheduler instance;
     private final String name;
     private final List<SubCommand> subCommands;
-    public AbstractCommand(@NotNull String name, @NotNull ShopSystem instance) {
+    public AbstractCommand(@NotNull String name, @NotNull CommandScheduler instance) {
         this.name = name.toLowerCase();
         this.instance = instance;
         this.subCommands = new ArrayList<>();
@@ -32,7 +33,6 @@ public class AbstractCommand implements TabExecutor {
 
     private boolean validate(SubCommand subCommand, @NotNull CommandSender sender, @NotNull Command command, @NotNull String[] args){
         if(subCommand == null) return false;
-        if(!sender.hasPermission(subCommand.getPermission())) return false;
         if(!subCommand.isPlayerOnly() && !(sender instanceof Player)) return false;
         return true;
     }
@@ -59,6 +59,12 @@ public class AbstractCommand implements TabExecutor {
         if(args.length == 0) return onRootCommand(commandSender, command, args);
         SubCommand subCommand = this.getSubCommand(args[0]);
         if(!validate(subCommand, commandSender, command, args)) return true;
+        if(!commandSender.hasPermission(subCommand.getPermission())) {
+            commandSender.sendMessage("No perms");
+            return true;
+        };
+
+
         return subCommand.onCommand(commandSender, command, label, Arrays.copyOfRange(args, 1, args.length));
     }
 

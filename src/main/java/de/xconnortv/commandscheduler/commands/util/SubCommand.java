@@ -1,6 +1,6 @@
-package de.xconnortv.shopsystem.commands.util;
+package de.xconnortv.commandscheduler.commands.util;
 
-import de.xconnortv.shopsystem.ShopSystem;
+import de.xconnortv.commandscheduler.CommandScheduler;
 import lombok.Getter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -19,7 +19,7 @@ public abstract class SubCommand {
         this.cmd = cmd;
         this.playerOnly = playerOnly;
     }
-    public ShopSystem getInstance(){
+    public CommandScheduler getInstance(){
         return cmd.getInstance();
     }
     public String getCommandName(){
