@@ -4,6 +4,7 @@ import de.xconnortv.commandscheduler.commands.SchedulerCommand;
 import de.xconnortv.commandscheduler.commands.util.AbstractCommand;
 import de.xconnortv.commandscheduler.exeptions.SchedulerException;
 import lombok.Getter;
+import mc.obliviate.inventory.InventoryAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.PluginCommand;
@@ -18,11 +19,14 @@ import java.util.List;
 @Getter
 public final class CommandScheduler extends JavaPlugin {
 
+    private static CommandScheduler INSTANCE;
+
     private ConfigHolder configHolder;
     @Override
     public void onEnable() {
+        INSTANCE = this;
+        new InventoryAPI(this).init();
         initConfig();
-
         configHolder = ConfigHolder.load(this);
 
 
@@ -81,10 +85,16 @@ public final class CommandScheduler extends JavaPlugin {
     public void onDisable() {
         stopScheduleAll();
     }
-
     public void reload() {
+        reload(false);
+    }
+    public void reload(boolean holderOnly) {
         reloadConfig();
         initConfig();
+        if(holderOnly) {
+            configHolder = ConfigHolder.load(this);
+            return;
+        }
         stopScheduleAll();
         configHolder = ConfigHolder.load(this);
         scheduleAll();
@@ -105,6 +115,11 @@ public final class CommandScheduler extends JavaPlugin {
 
     public String formatMessage(String message) {
         return ChatColor.translateAlternateColorCodes('&', configHolder.getPrefix() + " " + message);
+    }
+
+
+    public static CommandScheduler getInstance() {
+        return INSTANCE;
     }
 
 }

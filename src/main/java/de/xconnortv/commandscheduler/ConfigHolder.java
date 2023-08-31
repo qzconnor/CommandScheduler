@@ -3,9 +3,12 @@ package de.xconnortv.commandscheduler;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Value;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 @Getter
@@ -58,12 +61,16 @@ public class ConfigHolder {
         ).getKeys(false)) {
             String cnfPre = "commands." + key;
 
-            commandHashMap.put(key, new ConfigCommand(
-                    key,
-                    config.getString(cnfPre + ".command"),
-                    config.getString(cnfPre + ".interval"),
-                    config.getBoolean(cnfPre + ".active", false)
-            ));
+            if(ConfigCommand.validDateInterval(config.getString(cnfPre + ".interval"))) {
+                commandHashMap.put(key, new ConfigCommand(
+                        key,
+                        config.getString(cnfPre + ".command"),
+                        config.getString(cnfPre + ".interval"),
+                        config.getBoolean(cnfPre + ".active", false)
+                ));
+            }
+
+
         }
 
         return new ConfigHolder(
@@ -82,6 +89,16 @@ public class ConfigHolder {
                 '}';
     }
 
+    public static String limitAndAddEllipsis(String input, int maxLength) {
+        if (input.length() <= maxLength) {
+            return input;
+        } else {
+            String truncated = input.substring(0, maxLength - 3); // -3 for the ellipsis
+            return truncated + "...";
+        }
+    }
+
+
     @Getter
     @Setter
     public static class ConfigCommand {
@@ -91,6 +108,11 @@ public class ConfigHolder {
         private boolean active;
         private int schedulerId;
 
+
+        public ConfigCommand() {
+            this.schedulerId = -1;
+        }
+
         public ConfigCommand(String name, String command, String interval, boolean active) {
             this.name = name;
             this.command = command;
@@ -99,27 +121,34 @@ public class ConfigHolder {
             this.schedulerId = -1;
         }
 
-        public long getRealInterval() {
-            long ticks = 0;
-
+        public static boolean validDateInterval(@Nullable String string) {
+            if(string == null) return false;
+            List<Character> validUnits = List.of('d', 's');
             try {
-                int value = Integer.parseInt(getInterval().substring(0, getInterval().length() - 1));
-                char unit = getInterval().charAt(getInterval().length() - 1);
+                Integer.parseInt(string.substring(0, string.length() - 1));
+            } catch (NumberFormatException e) {
+                return false;
+            }
+            char unit = string.charAt(string.length() - 1);
+            System.out.println(unit);
+            return validUnits.contains(unit);
+        }
 
-                switch (unit) {
-                    case 'd':
-                        ticks = (long) value * 24 * 60 * 60 * 20; // 1 Tag = 24 Stunden = 24 * 60 Minuten = 24 * 60 * 60 Sekunden = 24 * 60 * 60 * 20 Ticks
-                        break;
-                    case 's':
-                        ticks = value * 20L; // 1 Sekunde = 20 Ticks
-                        break;
-                    default:
-                        System.out.println("Ungültige Einheit.");
-                }
-            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                System.out.println("Ungültiges Eingabeformat.");
+        public long getRealInterval() throws RuntimeException {
+            long ticks;
+
+            if(!validDateInterval(getInterval())) {
+                return -1;
             }
 
+            int value = Integer.parseInt(getInterval().substring(0, getInterval().length() - 1));
+            char unit = getInterval().charAt(getInterval().length() - 1);
+
+            ticks = switch (unit) {
+                case 'd' -> value * 24L * 60L * 60L * 20L;
+                case 's' -> value * 20L;
+                default -> throw new RuntimeException("Invalid date format!");
+            };
             return ticks;
         }
 
